@@ -4,25 +4,35 @@ defmodule WebsocketMock.MixProject do
   def project do
     [
       app: :websocket_mock,
+      description: "A lightweight WebSocket mock server for testing",
       version: "0.1.0",
       elixir: "~> 1.18",
-      start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package()
     ]
   end
 
   def application do
-    [
-      extra_applications: [:logger]
-    ]
+    []
   end
 
   defp deps do
     [
       {:plug, "~> 1.18"},
       {:bandit, "~> 1.7"},
-      {:websock_adapter, "~> 0.5.8"},
-      {:websockex, "~> 0.5.0", hex: :websockex_wt}
+      {:websock_adapter, "~> 0.5"},
+      {:websockex, "~> 0.5", only: :test, hex: :websockex_wt},
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      maintainers: ["Pascal Pfeiffer"],
+      links: %{
+        "GitHub" => "https://github.com/pascal736/websocket_mock"
+      }
     ]
   end
 end
