@@ -19,9 +19,9 @@ defmodule WebsocketMock.MixProject do
 
   defp deps do
     [
-      {:cowboy, "~> 2.10"},
       {:plug, "~> 1.18"},
-      {:plug_cowboy, "~> 2.7"},
+      {:bandit, "~> 1.7"},
+      {:websock_adapter, "~> 0.5.8"},
       {:websockex, "~> 0.5.0", hex: :websockex_wt}
     ]
   end

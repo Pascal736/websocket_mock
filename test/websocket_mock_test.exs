@@ -1,46 +1,47 @@
 defmodule WebsocketMockTest do
-  alias TestHelper.WsClient
-
   use ExUnit.Case
-  doctest WebsocketMock
+  doctest WebSocketMock
 
   describe "websocket mock server" do
     test "creates a unique url each time it starts" do
-      servers = for _ <- 1..10, do: WebsocketMock.start_link()
+      servers = for _ <- 1..10, do: WebSocketMock.start()
 
-      {urls, pids} = Enum.unzip(servers)
+      {urls, ports} = Enum.unzip(servers)
 
       assert length(Enum.uniq(urls)) == 10
-      assert length(Enum.uniq(pids)) == 10
+      assert length(Enum.uniq(ports)) == 10
     end
 
     test "is_connected? returns false when it is not connected" do
-      {:ok, pid} = WebsocketMock.start_link()
-      refute WebsocketMock.is_connected?(pid)
+      {port, _url} = WebSocketMock.start()
+      refute WebSocketMock.is_connected?(port)
     end
 
     test "is_connected? returns true when it is connected" do
-      {url, pid} = WebsocketMock.start_link()
-      WsClient.start_link(url, name: :ws_client)
+      {port, url} = WebSocketMock.start()
+      {:ok, _client_pid} = WsClient.start(url)
 
-      assert WebsocketMock.is_connected?(pid)
+      assert WebSocketMock.is_connected?(port)
     end
 
     test "number of connections is correct" do
-      {url, pid} = WebsocketMock.start_link()
-      WsClient.start_link(url, name: :ws_client)
+      {port, url} = WebSocketMock.start()
 
-      assert WebsocketMock.num_connections(pid) == 1
+      {:ok, _client_pid} = WsClient.start(url)
+      assert WebSocketMock.num_connections(port) == 1
 
-      WsClient.start_link(url, name: :ws_client2)
-      assert WebsocketMock.num_connections(pid) == 2
+      {:ok, _client_pid} = WsClient.start(url)
+      assert WebSocketMock.num_connections(port) == 2
     end
 
     test "can send messages to the client" do
-      {url, pid} = WebsocketMock.start_link()
-      {:ok, client_pid} = WsClient.start_link(url, name: :ws_client)
+      {port, url} = WebSocketMock.start()
+      {:ok, client_pid} = WsClient.start(url)
+      [client_id] = WebSocketMock.list_clients(port) |> Enum.map(& &1.client_id)
 
-      WebsocketMock.send(pid, client_pid, {:text, "Hello, WebSocket!"})
+      WebSocketMock.send_message(port, client_id, {:text, "Hello, WebSocket!"})
+      # Allow time for the message to be processed
+      Process.sleep(10)
 
       assert WsClient.received_messages(client_pid) == [{:text, "Hello, WebSocket!"}]
     end

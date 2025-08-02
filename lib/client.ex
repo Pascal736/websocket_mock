@@ -1,32 +1,37 @@
 defmodule WsClient do
   use WebSockex
 
-  @impl true
-  def start_link(url, opts \\ []) do
-    name = Keyword.get(opts, :name, __MODULE__)
+  def start(url) when is_binary(url) do
     state = %{received: [], sent: []}
-    Websockex.start_link(url, __MODULE__, state, name: name)
+    {:ok, pid} = WebSockex.start_link(url, __MODULE__, state)
+    Process.sleep(10)
+    {:ok, pid}
   end
 
   @impl true
   def handle_frame({type, msg}, state) do
-    IO.puts("Received Message - Type: #{inspect(type)} -- Message: #{inspect(msg)}")
     state = %{state | received: [{type, msg} | state.received]}
     {:ok, state}
   end
 
   @impl true
   def handle_cast({:send, {type, msg} = frame}, state) do
-    IO.puts("Sending #{type} frame with payload: #{msg}")
     {:reply, frame, state}
   end
 
-  def received_messages(client) do
-    GenServer.call(client, :get_received)
+  @impl true
+  def handle_info({:get_received, from}, state) do
+    send(from, {:received_messages, Enum.reverse(state.received)})
+    {:ok, state}
   end
 
-  @impl true
-  def handle_call(:get_received, _from, state) do
-    {:reply, state.received, state}
+  def received_messages(client_pid) do
+    send(client_pid, {:get_received, self()})
+
+    receive do
+      {:received_messages, messages} -> messages
+    after
+      10 -> []
+    end
   end
 end

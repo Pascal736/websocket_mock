@@ -21,3 +21,5 @@ websocket_mock-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+.iex.exs
