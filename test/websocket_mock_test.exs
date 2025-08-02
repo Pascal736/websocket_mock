@@ -1,5 +1,7 @@
 defmodule WebsocketMockTest do
+  alias WebSocketMock.WsClient
   use ExUnit.Case
+
   doctest WebSocketMock
 
   describe "websocket mock server" do
@@ -41,10 +43,10 @@ defmodule WebsocketMockTest do
 
       assert WebSocketMock.num_connections(mock) == 0
 
-      {:ok, _client_pid1} = WsClient.start(mock.url)
+      {:ok, _client} = WsClient.start(mock.url)
       assert WebSocketMock.num_connections(mock) == 1
 
-      {:ok, _client_pid2} = WsClient.start(mock.url)
+      {:ok, _client} = WsClient.start(mock.url)
       assert WebSocketMock.num_connections(mock) == 2
 
       WebSocketMock.stop(mock)
@@ -52,7 +54,7 @@ defmodule WebsocketMockTest do
 
     test "can send messages to the client" do
       {:ok, mock} = WebSocketMock.start()
-      {:ok, client_pid} = WsClient.start(mock.url)
+      {:ok, client} = WsClient.start(mock.url)
 
       [%{client_id: client_id}] = WebSocketMock.list_clients(mock)
 
@@ -60,7 +62,7 @@ defmodule WebsocketMockTest do
 
       # Allow time for the message to be processed
       Process.sleep(10)
-      assert WsClient.received_messages(client_pid) == [{:text, "Hello, WebSocket!"}]
+      assert WsClient.received_messages(client) == [{:text, "Hello, WebSocket!"}]
 
       WebSocketMock.stop(mock)
     end
@@ -70,7 +72,7 @@ defmodule WebsocketMockTest do
 
       assert WebSocketMock.list_clients(mock) == []
 
-      {:ok, _client_pid} = WsClient.start(mock.url)
+      {:ok, _client} = WsClient.start(mock.url)
 
       clients = WebSocketMock.list_clients(mock)
       assert length(clients) == 1
@@ -111,6 +113,32 @@ defmodule WebsocketMockTest do
 
       WebSocketMock.stop(mock1)
       WebSocketMock.stop(mock2)
+    end
+
+    test "stores received messages" do
+      {:ok, mock} = WebSocketMock.start()
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, {:text, "Hello"})
+      # Allow time for the message to be processed
+      Process.sleep(10)
+
+      assert WebSocketMock.received_messages(mock) == [{:text, "Hello"}]
+    end
+
+    test "stores received messages from specific client" do
+      {:ok, mock} = WebSocketMock.start()
+      {:ok, client1} = WsClient.start(mock.url)
+      {:ok, client2} = WsClient.start(mock.url)
+
+      WsClient.send_message(client1, {:text, "Hello"})
+      WsClient.send_message(client2, {:text, "World"})
+      # Allow time for the message to be processed
+      Process.sleep(10)
+
+      [client1, client2] = WebSocketMock.list_clients(mock)
+      assert WebSocketMock.received_messages(mock, client1.client_id) == [{:text, "Hello"}]
+      assert WebSocketMock.received_messages(mock, client2.client_id) == [{:text, "World"}]
     end
   end
 end

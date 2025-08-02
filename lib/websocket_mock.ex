@@ -263,6 +263,105 @@ defmodule WebSocketMock do
     end
   end
 
+  @doc """
+  Returns all received messages from all connected clients as a list.
+
+  ## Parameters
+
+  - `mock` - The mock server instance to query
+
+  ## Returns
+
+  A list of all messages received by all clients. Messages are in
+  the order they were received by each client, but the order between
+  different clients is not guaranteed.
+
+  ## Examples
+
+     {:ok, mock} = WebSocketMock.start()
+     {:ok, client1} = WsClient.start(mock.url)
+     {:ok, client2} = WsClient.start(mock.url)
+     
+     # Clients send messages to server
+     WsClient.send_message(client1, {:text, "Hello from client 1"})
+     WsClient.send_message(client2, {:text, "Hello from client 2"})
+     
+     # Get all received messages
+     all_messages = WebSocketMock.received_messages(mock)
+     assert length(all_messages) == 2
+     assert "Hello from client 1" in all_messages
+     assert "Hello from client 2" in all_messages
+
+  """
+  @spec received_messages(t()) :: [term()]
+  def received_messages(%__MODULE__{registry_name: registry_name}) do
+    Registry.select(registry_name, [
+      {{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}
+    ])
+    |> Enum.map(fn {client_id, pid, _metadata} ->
+      send(pid, {:get_received, self()})
+
+      receive do
+        {:received_messages, messages} -> messages
+      after
+        1000 -> {client_id, []}
+      end
+    end)
+    |> List.flatten()
+  end
+
+  @doc """
+  Returns received messages from a specific client.
+
+  Retrieves all messages that have been received by the WebSocket handler
+  for the specified client. Messages are returned in the order they were
+  received.
+
+  ## Parameters
+
+  - `mock` - The mock server instance to query
+  - `client_id` - The unique client identifier (from `list_clients/1`)
+
+  ## Returns
+
+  - A list of messages received by the client
+  - `{:error, :client_not_found}` if the client ID doesn't exist
+
+  ## Examples
+
+     {:ok, mock} = WebSocketMock.start()
+     {:ok, client} = WsClient.start(mock.url)
+     
+     # Client sends messages to server
+     WsClient.send_message(client, {:text, "First message"})
+     WsClient.send_message(client, {:text, "Second message"})
+     
+     # Get the client ID and retrieve their messages
+     [%{client_id: client_id}] = WebSocketMock.list_clients(mock)
+     messages = WebSocketMock.received_messages(mock, client_id)
+     assert messages == ["First message", "Second message"]
+     
+     # Non-existent client returns error
+     {:error, :client_not_found} = WebSocketMock.received_messages(mock, "invalid-id")
+
+  """
+  @spec received_messages(t(), String.t()) :: [term()] | {:error, :client_not_found}
+  def received_messages(%__MODULE__{registry_name: registry_name}, client_id) do
+    case Registry.lookup(registry_name, client_id) do
+      [{pid, _}] ->
+        send(pid, {:get_received, self()})
+
+        receive do
+          {:received_messages, messages} -> messages
+        after
+          1000 -> []
+        end
+
+      [] ->
+        {:error, :client_not_found}
+    end
+  end
+
   defp get_port do
     :rand.uniform(10_000) + 50_000
   end

@@ -69,6 +69,17 @@ defmodule MyAppTest do
     # Assert client received message
     assert_receive {:websocket_message, {:text, "test message"}}
   end
+
+
+  test "client sends message to server", %{mock: mock} do
+    {:ok, client} = MyApp.WebSocketClient.start(mock.url)
+    
+    # Send message from client
+    MyApp.WebSocketClient.send_message(client, {:text, "Hello Server!"})
+    
+    # Verify server received message
+    assert WebSocketMock.received_messsages(mock) == [{:text, "Hello Server!"}]
+  end
 end
 ```
 

@@ -27,6 +27,11 @@ defmodule WebSocketMock.Handler do
     {:push, message, state}
   end
 
+  def handle_info({:get_received, from}, state) do
+    send(from, {:received_messages, Enum.reverse(state.received)})
+    {:ok, state}
+  end
+
   @impl true
   def handle_info({:EXIT, _pid, _reason}, state) do
     {:ok, state}
@@ -34,8 +39,8 @@ defmodule WebSocketMock.Handler do
 
   @impl true
   def handle_in({message, [opcode: :text]}, state) do
-    state = %{state | received: [message | state.received]}
-    {:push, {:text, "echo: #{inspect(message)}"}, state}
+    state = %{state | received: [{:text, message} | state.received]}
+    {:push, {:text, message}, state}
   end
 
   @impl true
