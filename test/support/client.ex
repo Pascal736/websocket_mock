@@ -4,6 +4,7 @@ defmodule WsClient do
   def start(url) when is_binary(url) do
     state = %{received: [], sent: []}
     {:ok, pid} = WebSockex.start_link(url, __MODULE__, state)
+    # Allow time for the connection to establish
     Process.sleep(10)
     {:ok, pid}
   end
