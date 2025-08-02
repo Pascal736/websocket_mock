@@ -3,13 +3,13 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/websocket_mock.svg)](https://hex.pm/packages/websocket_mock)
 [![Documentation](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/websocket_mock)
 
-A lightweight WebSocket mock server for testing Elixir applications. Create isolated WebSocket servers on-demand for reliable testing of WebSocket clients and real-time features.
+A lightweight web socket mock server for testing Elixir applications. Create isolated web socket servers on-demand for reliable testing of web socket clients and real-time features.
 
 ## Features
 
 - **Isolated test servers** - Each mock runs on a unique port with its own client registry
 - **Client management** - Track connections, send messages, and query connection status  
-- **Test-friendly** - Designed for ExUnit with minimal setup
+- **Test-friendly** - Designed for `ExUnit` with minimal setup
 
 ## Installation
 
@@ -74,7 +74,7 @@ end
 
 ## Message Types
 
-Send different WebSocket frame types:
+Send different web socket frame types:
 
 ```elixir
 # Text messages
@@ -97,9 +97,3 @@ Full documentation is available at [https://hexdocs.pm/websocket_mock](https://h
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-```elixir
-
-
-```
-```
-```
