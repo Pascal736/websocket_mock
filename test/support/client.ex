@@ -31,7 +31,7 @@ defmodule WebSocketMock.WsClient do
   end
 
   @impl true
-  def handle_cast({:send, {type, msg} = frame}, state) do
+  def handle_cast({:send, frame}, state) do
     {:reply, frame, state}
   end
 

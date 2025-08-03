@@ -94,9 +94,11 @@ defmodule WebSocketMock do
     port = get_port()
     registry_name = :"ws_mock_registry_#{:erlang.unique_integer()}"
 
+    # TODO: Move bandit in wrapper GenServer to handle used ports retry.
     children = [
       {Registry, keys: :unique, name: registry_name},
-      {Bandit, plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: port},
+      {Bandit,
+       plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: port, startup_log: false},
       {WebSocketMock.State, registry_name: registry_name}
     ]
 
