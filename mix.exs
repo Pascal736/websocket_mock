@@ -5,7 +5,7 @@ defmodule WebsocketMock.MixProject do
     [
       app: :websocket_mock,
       description: "A lightweight WebSocket mock server for testing",
-      version: "0.1.2",
+      version: "0.1.3",
       elixir: "~> 1.18",
       deps: deps(),
       package: package()
@@ -21,6 +21,7 @@ defmodule WebsocketMock.MixProject do
       {:plug, "~> 1.18"},
       {:bandit, "~> 1.7"},
       {:websock_adapter, "~> 0.5"},
+      {:jason, "~> 1.4"},
       {:websockex, "~> 0.5", only: :test, hex: :websockex_wt},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]

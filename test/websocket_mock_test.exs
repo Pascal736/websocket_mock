@@ -160,5 +160,44 @@ defmodule WebsocketMockTest do
       Process.sleep(10)
       assert WsClient.received_messages(client) == [response]
     end
+
+    test "replys with correct configured json message when map get's send" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = {:text, %{"msg" => "hello"}}
+      response = {:text, %{"hello" => "world"}}
+      WebSocketMock.reply_with(mock, msg, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [response]
+    end
+
+    test "replys with correct configured json message when list get's send" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = {:text, [1, 2, 3]}
+      response = {:text, [4, 5, 6]}
+      WebSocketMock.reply_with(mock, msg, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [response]
+    end
+
+    test "replys with correct configured json message when nested list get's send" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = {:text, [1, 2, %{"number" => 3}]}
+      response = {:text, [4, 5, %{"number" => 6}]}
+      WebSocketMock.reply_with(mock, msg, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [response]
+    end
   end
 end
