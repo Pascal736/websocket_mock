@@ -10,7 +10,7 @@ defmodule WebSocketMock.WsClient do
     {:ok, %__MODULE__{pid: pid}}
   end
 
-  def send_message(%__MODULE__{pid: pid}, {:text, msg} = request) when not is_binary(msg) do
+  def send_message(%__MODULE__{pid: pid}, {:text, msg}) when not is_binary(msg) do
     msg = Jason.encode!(msg)
     WebSockex.send_frame(pid, {:text, msg})
   end
@@ -33,6 +33,13 @@ defmodule WebSocketMock.WsClient do
   def handle_frame({type, msg}, state) do
     msg = parse_message(msg)
     state = %{state | received: [{type, msg} | state.received]}
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_ping({:ping, msg}, state) do
+    msg = parse_message(msg)
+    state = %{state | received: [{:ping, msg} | state.received]}
     {:ok, state}
   end
 

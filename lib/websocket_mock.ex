@@ -235,6 +235,7 @@ defmodule WebSocketMock do
 
   - `:ok` - Message sent successfully
   - `{:error, :client_not_found}` - Client ID does not exist
+  - `{:error, :invalid_message_format}` - Message could not be encoded
 
   ## Examples
 
@@ -251,15 +252,26 @@ defmodule WebSocketMock do
       {:error, :client_not_found} = WebSocketMock.send_message(mock, "invalid-id", {:text, "Hello"})
 
   """
-  @spec send_message(t(), String.t(), message()) :: :ok | {:error, :client_not_found}
-  def send_message(%__MODULE__{registry_name: registry_name}, client_id, message) do
-    case Registry.lookup(registry_name, client_id) do
+  @spec send_message(t(), String.t(), message()) ::
+          :ok | {:error, :client_not_found | :invalid_message_format}
+  def send_message(%__MODULE__{} = mock, client_id, {type, message}) when is_binary(message) do
+    case Registry.lookup(mock.registry_name, client_id) do
       [{pid, _}] ->
-        send(pid, {:server_message, message})
+        send(pid, {:server_message, {type, message}})
         :ok
 
       [] ->
         {:error, :client_not_found}
+    end
+  end
+
+  def send_message(%__MODULE__{} = mock, client_id, {:text, message}) do
+    case Jason.encode(message) do
+      {:ok, json_message} ->
+        send_message(mock, client_id, {:text, json_message})
+
+      _ ->
+        {:error, :invalid_message_format}
     end
   end
 
