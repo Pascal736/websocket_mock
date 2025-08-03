@@ -40,7 +40,15 @@ defmodule WebSocketMock.Handler do
   @impl true
   def handle_in({message, [opcode: :text]}, state) do
     state = %{state | received: [{:text, message} | state.received]}
-    {:push, {:text, message}, state}
+
+    case stored_reply(state.registry_name, {:text, message}) do
+      nil ->
+        {:ok, state}
+
+      reply ->
+        state = %{state | sent: [reply | state.sent]}
+        {:push, reply, state}
+    end
   end
 
   @impl true
@@ -51,5 +59,9 @@ defmodule WebSocketMock.Handler do
 
   defp generate_client_id do
     :crypto.strong_rand_bytes(16) |> Base.encode64()
+  end
+
+  defp stored_reply(registry_name, message) do
+    WebSocketMock.State.replies(registry_name) |> Map.get(message)
   end
 end
