@@ -18,7 +18,7 @@ Add `websocket_mock` to your test dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:websocket_mock, "~> 0.1.0", only: :test}
+    {:websocket_mock, "~> 0.1.2", only: :test}
   ]
 end
 ```
@@ -29,7 +29,7 @@ end
 # Start a mock server
 {:ok, mock} = WebSocketMock.start()
 
-# Connect your WebSocket client
+# Connect your web socket client
 {:ok, client_pid} = MyWebSocketClient.start(mock.url)
 
 # Check connection status
@@ -63,11 +63,10 @@ defmodule MyAppTest do
     assert WebSocketMock.is_connected?(mock)
     
     # Send message from server
-    [%{client_id: client_id}] = WebSocketMock.list_clients(mock)
+    [client_id] = WebSocketMock.list_clients(mock)
     WebSocketMock.send_message(mock, client_id, {:text, "test message"})
-    
-    # Assert client received message
-    assert_receive {:websocket_message, {:text, "test message"}}
+
+    assert MyApp.WebSocketClient.received_messages(client) == [{:text, "test message"}]
   end
 
 
@@ -82,7 +81,7 @@ defmodule MyAppTest do
   end
 
 
-  test "cient handles response", %{mock: mock} do 
+  test "client handles response", %{mock: mock} do 
     WebSocketMock.reply_with(mock, {:text, "ping"}, {:text, "pong"})
 
     # Client will receive {:text, "pong"}
