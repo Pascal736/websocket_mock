@@ -360,6 +360,30 @@ defmodule WebSocketMock do
     end
   end
 
+  @doc """
+  Configures an automatic reply for when clients send a specific message.
+
+  Sets up the mock server to automatically respond with a predefined reply
+  when any connected client sends a message that matches the given pattern.
+
+  ## Parameters
+
+  - `mock` - The mock server instance
+  - `msg` - The message pattern to match against incoming client messages
+  - `reply` - The message to automatically send back when the pattern matches
+
+  ## Examples
+
+      {:ok, mock} = WebSocketMock.start()
+      
+      # Set up automatic replies
+      WebSocketMock.reply_with(mock, {:text, "ping"}, {:text, "pong"})
+      
+      {:ok, client} = WsClient.start(mock.url)
+      WsClient.send_message(client, {:text, "ping"})
+      # Client will receive {:text, "pong"}
+
+  """
   def reply_with(%__MODULE__{registry_name: registry_name}, msg, reply) do
     WebSocketMock.State.store_reply(registry_name, msg, reply)
   end

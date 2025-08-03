@@ -80,6 +80,15 @@ defmodule MyAppTest do
     # Verify server received message
     assert WebSocketMock.received_messsages(mock) == [{:text, "Hello Server!"}]
   end
+
+
+  test "cient handles response", %{mock: mock} do 
+    WebSocketMock.reply_with(mock, {:text, "ping"}, {:text, "pong"})
+
+    # Client will receive {:text, "pong"}
+    MyApp.WebSocketClient.send_message(client, {:text, "ping"})
+  end
+
 end
 ```
 
