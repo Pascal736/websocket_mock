@@ -21,6 +21,7 @@ defmodule WebsocketMock.MixProject do
       {:plug, "~> 1.18"},
       {:bandit, "~> 1.7"},
       {:websock_adapter, "~> 0.5"},
+      {:jason, "~> 1.4"},
       {:websockex, "~> 0.5", only: :test, hex: :websockex_wt},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]
