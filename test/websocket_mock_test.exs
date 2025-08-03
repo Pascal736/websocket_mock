@@ -136,9 +136,16 @@ defmodule WebsocketMockTest do
       # Allow time for the message to be processed
       Process.sleep(10)
 
-      [client1, client2] = WebSocketMock.list_clients(mock)
-      assert WebSocketMock.received_messages(mock, client1.client_id) == [{:text, "Hello"}]
-      assert WebSocketMock.received_messages(mock, client2.client_id) == [{:text, "World"}]
+      clients = WebSocketMock.list_clients(mock)
+
+      messages_by_client =
+        Enum.map(clients, fn client ->
+          WebSocketMock.received_messages(mock, client.client_id)
+        end)
+
+      assert length(clients) == 2
+      assert [{:text, "Hello"}] in messages_by_client
+      assert [{:text, "World"}] in messages_by_client
     end
 
     test "replys with correct configured message" do
