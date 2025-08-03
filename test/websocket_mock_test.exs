@@ -140,5 +140,18 @@ defmodule WebsocketMockTest do
       assert WebSocketMock.received_messages(mock, client1.client_id) == [{:text, "Hello"}]
       assert WebSocketMock.received_messages(mock, client2.client_id) == [{:text, "World"}]
     end
+
+    test "replys with correct configured message" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = {:text, "hello"}
+      response = {:text, "world"}
+      WebSocketMock.reply_with(mock, msg, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [response]
+    end
   end
 end

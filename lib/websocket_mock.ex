@@ -96,7 +96,8 @@ defmodule WebSocketMock do
 
     children = [
       {Registry, keys: :unique, name: registry_name},
-      {Bandit, plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: port}
+      {Bandit, plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: port},
+      {WebSocketMock.State, registry_name: registry_name}
     ]
 
     case Supervisor.start_link(children, strategy: :one_for_one) do
@@ -206,14 +207,11 @@ defmodule WebSocketMock do
   """
   @spec list_clients(t()) :: [client_info()]
   def list_clients(%__MODULE__{registry_name: registry_name}) do
-    Registry.select(registry_name, [
-      {{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}
-    ])
-    |> Enum.map(fn {client_id, pid, metadata} ->
+    get_connected_clients(registry_name)
+    |> Enum.map(fn {client_id, pid} ->
       %{
         client_id: client_id,
         pid: pid,
-        metadata: metadata,
         alive?: Process.alive?(pid)
       }
     end)
@@ -295,10 +293,8 @@ defmodule WebSocketMock do
   """
   @spec received_messages(t()) :: [term()]
   def received_messages(%__MODULE__{registry_name: registry_name}) do
-    Registry.select(registry_name, [
-      {{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}
-    ])
-    |> Enum.map(fn {client_id, pid, _metadata} ->
+    get_connected_clients(registry_name)
+    |> Enum.map(fn {client_id, pid} ->
       send(pid, {:get_received, self()})
 
       receive do
@@ -347,8 +343,11 @@ defmodule WebSocketMock do
   """
   @spec received_messages(t(), String.t()) :: [term()] | {:error, :client_not_found}
   def received_messages(%__MODULE__{registry_name: registry_name}, client_id) do
-    case Registry.lookup(registry_name, client_id) do
-      [{pid, _}] ->
+    case get_client_pid(registry_name, client_id) do
+      nil ->
+        {:error, :client_not_found}
+
+      pid ->
         send(pid, {:get_received, self()})
 
         receive do
@@ -356,13 +355,27 @@ defmodule WebSocketMock do
         after
           1000 -> []
         end
-
-      [] ->
-        {:error, :client_not_found}
     end
+  end
+
+  def reply_with(%__MODULE__{registry_name: registry_name}, msg, reply) do
+    WebSocketMock.State.store_reply(registry_name, msg, reply)
   end
 
   defp get_port do
     :rand.uniform(10_000) + 50_000
+  end
+
+  defp get_connected_clients(registry_name) do
+    Registry.select(registry_name, [
+      {{:"$1", :"$2", :"$3"}, [{:"=/=", :"$3", nil}], [{{:"$1", :"$2"}}]}
+    ])
+  end
+
+  defp get_client_pid(registry_name, client_id) do
+    case Registry.lookup(registry_name, client_id) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
   end
 end
