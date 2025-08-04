@@ -73,7 +73,6 @@ defmodule MyAppTest do
   test "client sends message to server", %{mock: mock} do
     {:ok, client} = MyApp.WebSocketClient.start(mock.url)
     
-    # Send message from client
     MyApp.WebSocketClient.send_message(client, {:text, "Hello Server!"})
     
     # Verify server received message
@@ -82,31 +81,14 @@ defmodule MyAppTest do
 
 
   test "client handles response", %{mock: mock} do 
-    WebSocketMock.reply_with(mock, {:text, "ping"}, {:text, "pong"})
+    WebSocketMock.reply_with(mock, {:text, "hello"}, {:text, "world"})
 
-    # Client will receive {:text, "pong"}
-    MyApp.WebSocketClient.send_message(client, {:text, "ping"})
+    MyApp.WebSocketClient.send_message(client, {:text, "hello"})
+    assert MyApp.WebSocketClient.received_messages(client) == [{:text, "world"}]
   end
 
 end
 ```
-
-## Message Types
-
-Send different web socket frame types:
-
-```elixir
-# Text messages
-WebSocketMock.send_message(mock, client_id, {:text, "Hello"})
-
-# Binary data
-WebSocketMock.send_message(mock, client_id, {:binary, <<1, 2, 3>>})
-
-# Ping/Pong frames
-WebSocketMock.send_message(mock, client_id, {:ping, "ping-data"})
-WebSocketMock.send_message(mock, client_id, {:pong, "pong-data"})
-```
-
 
 ## Documentation
 

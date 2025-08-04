@@ -60,7 +60,7 @@ defmodule WebSocketMock do
         }
 
   @typedoc "WebSocket message frame"
-  @type message :: {:text, String.t()} | {:binary, binary()} | {:ping | :pong, binary()}
+  @type message :: {:text, String.t()} | {:binary, binary()} | String.t()
 
   @typedoc "Client information returned by list_clients/1"
   @type client_info :: %{
@@ -273,6 +273,10 @@ defmodule WebSocketMock do
       _ ->
         {:error, :invalid_message_format}
     end
+  end
+
+  def send_message(%__MODULE__{} = mock, client_id, message) do
+    send_message(mock, client_id, {:text, message})
   end
 
   @doc """
