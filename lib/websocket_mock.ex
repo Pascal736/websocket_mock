@@ -31,15 +31,6 @@ defmodule WebSocketMock do
       # Clean up
       WebSocketMock.stop(mock)
 
-  ## Client Message Format
-
-  Messages sent via `send_message/3` should follow the WebSocket frame format:
-
-  - `{:text, "message"}` - Text frame
-  - `{:binary, <<data>>}` - Binary frame
-  - `{:ping, payload}` - Ping frame
-  - `{:pong, payload}` - Pong frame
-
   """
 
   @typedoc """
@@ -246,7 +237,9 @@ defmodule WebSocketMock do
       # Send different types of messages
       :ok = WebSocketMock.send_message(mock, client_id, {:text, "Hello!"})
       :ok = WebSocketMock.send_message(mock, client_id, {:binary, <<1, 2, 3>>})
-      :ok = WebSocketMock.send_message(mock, client_id, {:ping, "ping-data"})
+
+      # :text opcode can be omitted. By default, messages are sent as text
+      :ok = WebSocketMock.send_message(mock, client_id, "Hello!")
 
       # Handle non-existent clients
       {:error, :client_not_found} = WebSocketMock.send_message(mock, "invalid-id", {:text, "Hello"})
@@ -294,6 +287,7 @@ defmodule WebSocketMock do
 
   ## Examples
 
+  ```
      {:ok, mock} = WebSocketMock.start()
      {:ok, client1} = WsClient.start(mock.url)
      {:ok, client2} = WsClient.start(mock.url)
@@ -305,8 +299,9 @@ defmodule WebSocketMock do
      # Get all received messages
      all_messages = WebSocketMock.received_messages(mock)
      assert length(all_messages) == 2
-     assert "Hello from client 1" in all_messages
-     assert "Hello from client 2" in all_messages
+     assert {:text, "Hello from client 1"} in all_messages
+     assert {:text, "Hello from client 2"} in all_messages
+  ```
 
   """
   @spec received_messages(t()) :: [term()]
@@ -343,6 +338,7 @@ defmodule WebSocketMock do
 
   ## Examples
 
+  ```
      {:ok, mock} = WebSocketMock.start()
      {:ok, client} = WsClient.start(mock.url)
      
@@ -353,10 +349,11 @@ defmodule WebSocketMock do
      # Get the client ID and retrieve their messages
      [%{client_id: client_id}] = WebSocketMock.list_clients(mock)
      messages = WebSocketMock.received_messages(mock, client_id)
-     assert messages == ["First message", "Second message"]
+     assert messages == [{:text, "First message"}, {:text, "Second message"}]
      
      # Non-existent client returns error
      {:error, :client_not_found} = WebSocketMock.received_messages(mock, "invalid-id")
+  ```
 
   """
   @spec received_messages(t(), String.t()) :: [term()] | {:error, :client_not_found}
