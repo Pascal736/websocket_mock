@@ -95,5 +95,14 @@ defmodule WebsocketMockTest.SendMessagesTest do
 
       WebSocketMock.stop(mock)
     end
+
+    test "returns error for non-existent client" do
+      {:ok, mock} = WebSocketMock.start()
+
+      result = WebSocketMock.send_message(mock, "non-existent-client-id", {:text, "Hello"})
+      assert result == {:error, :client_not_found}
+
+      WebSocketMock.stop(mock)
+    end
   end
 end

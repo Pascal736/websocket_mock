@@ -15,6 +15,10 @@ defmodule WebSocketMock.WsClient do
     WebSockex.send_frame(pid, {:text, msg})
   end
 
+  def send_message(%__MODULE__{} = client, msg) when is_binary(msg) do
+    send_message(client, {:text, msg})
+  end
+
   def send_message(%__MODULE__{pid: pid}, request) do
     WebSockex.send_frame(pid, request)
   end

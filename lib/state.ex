@@ -17,13 +17,17 @@ defmodule WebSocketMock.State do
     end)
   end
 
-  def store_reply(registry_name, {msg_format, msg}, {reply_format, reply}) do
+  def store_reply(registry_name, {msg_opcode, msg}, {reply_opcode, reply}) do
     msg = stringify(msg)
     reply = stringify(reply)
 
     Agent.update({:via, Registry, {registry_name, :state}}, fn state ->
-      %{state | replies: Map.put(state.replies, {msg_format, msg}, {reply_format, reply})}
+      %{state | replies: Map.put(state.replies, {msg_opcode, msg}, {reply_opcode, reply})}
     end)
+  end
+
+  def store_reply(registry_name, msg, reply) do
+    store_reply(registry_name, {:text, msg}, {:text, reply})
   end
 
   defp stringify(val) when is_map(val), do: Jason.encode!(val)

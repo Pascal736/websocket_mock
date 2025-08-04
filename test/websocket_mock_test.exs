@@ -70,15 +70,6 @@ defmodule WebsocketMockTest do
       WebSocketMock.stop(mock)
     end
 
-    test "send_message returns error for non-existent client" do
-      {:ok, mock} = WebSocketMock.start()
-
-      result = WebSocketMock.send_message(mock, "non-existent-client-id", {:text, "Hello"})
-      assert result == {:error, :client_not_found}
-
-      WebSocketMock.stop(mock)
-    end
-
     test "multiple mock servers can run simultaneously" do
       {:ok, mock1} = WebSocketMock.start()
       {:ok, mock2} = WebSocketMock.start()
@@ -183,6 +174,19 @@ defmodule WebsocketMockTest do
 
       Process.sleep(10)
       assert WsClient.received_messages(client) == [response]
+    end
+
+    test "replys with correct configured json message when shorthand notation is used" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = "Hello"
+      response = "World"
+      WebSocketMock.reply_with(mock, msg, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [{:text, response}]
     end
   end
 end
