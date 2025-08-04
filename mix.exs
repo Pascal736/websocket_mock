@@ -5,7 +5,7 @@ defmodule WebsocketMock.MixProject do
     [
       app: :websocket_mock,
       description: "A lightweight WebSocket mock server for testing",
-      version: "0.1.3",
+      version: "0.2.0",
       elixir: "~> 1.18",
       deps: deps(),
       package: package()

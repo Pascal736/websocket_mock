@@ -18,7 +18,7 @@ Add `websocket_mock` to your test dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:websocket_mock, "~> 0.1.3", only: :test}
+    {:websocket_mock, "~> 0.2.0", only: :test}
   ]
 end
 ```
