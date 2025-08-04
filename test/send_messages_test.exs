@@ -35,6 +35,21 @@ defmodule WebsocketMockTest.SendMessagesTest do
       WebSocketMock.stop(mock)
     end
 
+    test "works with non strings and short notation" do
+      {:ok, mock} = WebSocketMock.start()
+      {:ok, client} = WsClient.start(mock.url)
+
+      [%{client_id: client_id}] = WebSocketMock.list_clients(mock)
+
+      :ok = WebSocketMock.send_message(mock, client_id, %{"hello" => "world"})
+
+      # Allow time for the message to be processed
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [{:text, %{"hello" => "world"}}]
+
+      WebSocketMock.stop(mock)
+    end
+
     test "works with binary data" do
       {:ok, mock} = WebSocketMock.start()
       {:ok, client} = WsClient.start(mock.url)
