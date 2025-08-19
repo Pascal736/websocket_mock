@@ -62,6 +62,17 @@ defmodule WebSocketMock.Handler do
   end
 
   defp stored_reply(registry_name, message) do
+    stored_value(registry_name, message) || stored_function(registry_name, message)
+  end
+
+  defp stored_value(registry_name, message) do
     WebSocketMock.State.replies(registry_name) |> Map.get(message)
+  end
+
+  defp stored_function(registry_name, message) do
+    WebSocketMock.State.filter_replies(registry_name)
+    |> Enum.find_value(fn {filter, reply} ->
+      filter.(message) && reply
+    end)
   end
 end

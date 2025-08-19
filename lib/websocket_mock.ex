@@ -53,6 +53,8 @@ defmodule WebSocketMock do
   @typedoc "WebSocket message frame"
   @type message :: {:text, String.t()} | {:binary, binary()} | String.t()
 
+  @type filter_function() :: (message() -> boolean())
+
   @typedoc "Client information returned by list_clients/1"
   @type client_info :: %{
           client_id: String.t(),
@@ -374,15 +376,15 @@ defmodule WebSocketMock do
   end
 
   @doc """
-  Configures an automatic reply for when clients send a specific message.
+  Configures an automatic reply that will be sent when clients transmit either a specific message or any message that matches the provided filter criteria.
 
   Sets up the mock server to automatically respond with a predefined reply
-  when any connected client sends a message that matches the given pattern.
+  when any connected client sends a message that matches the given value of filter condition.
 
   ## Parameters
 
   - `mock` - The mock server instance
-  - `msg` - The message pattern to match against incoming client messages
+  - `msg` - The message value or filter to match against incoming client messages
   - `reply` - The message to automatically send back when the pattern matches
 
   ## Examples
@@ -391,12 +393,15 @@ defmodule WebSocketMock do
       
       # Set up automatic replies
       WebSocketMock.reply_with(mock, {:text, "ping"}, {:text, "pong"})
+      # Also works with functions as filters
+      WebSocketMock.reply_with(mock, fn {opcode, msg} -> msg == "ping" end), {:text, "pong"})
       
       {:ok, client} = WsClient.start(mock.url)
       WsClient.send_message(client, {:text, "ping"})
       # Client will receive {:text, "pong"}
 
   """
+  @spec reply_with(t(), message() | filter_function(), message()) :: :ok
   def reply_with(%__MODULE__{registry_name: registry_name}, msg, reply) do
     WebSocketMock.State.store_reply(registry_name, msg, reply)
   end

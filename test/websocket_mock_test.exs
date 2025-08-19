@@ -188,5 +188,35 @@ defmodule WebsocketMockTest do
       Process.sleep(10)
       assert WsClient.received_messages(client) == [{:text, response}]
     end
+
+    test "replys with correct message when function is used as filter" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = "Hello"
+      response = "World"
+
+      filter = fn {_opcode, msg} -> msg == "Hello" end
+      WebSocketMock.reply_with(mock, filter, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [{:text, response}]
+    end
+
+    test "does not reply when filter condition is not met" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = "Hello"
+      response = "World"
+
+      filter = fn {_opcode, msg} -> msg == "Not Hello" end
+      WebSocketMock.reply_with(mock, filter, response)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == []
+    end
   end
 end
