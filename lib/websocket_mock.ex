@@ -400,6 +400,11 @@ defmodule WebSocketMock do
       WsClient.send_message(client, {:text, "ping"})
       # Client will receive {:text, "pong"}
 
+      # Mockserver accepts callbacks which run before sending the reply
+      WebSocketMock.reply_with(mock, "ping", fn {opcode, msg) -> {opcode, msg <> " pong"} end)
+
+      WsClient.send_message(client, {:text, "ping"})
+      # Client will receive {:text, "ping pong"}
   """
   @spec reply_with(t(), message() | filter_function(), message()) :: :ok
   def reply_with(%__MODULE__{registry_name: registry_name}, msg, reply) do

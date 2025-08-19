@@ -42,7 +42,6 @@ defmodule WebSocketMock.State do
   end
 
   defp normalize_matcher(matcher) when is_function(matcher), do: matcher
-  defp normalize_matcher({opcode, matcher}) when is_function(matcher), do: matcher
   defp normalize_matcher({opcode, matcher}), do: {opcode, stringify(matcher)}
   defp normalize_matcher(matcher), do: {:text, stringify(matcher)}
 

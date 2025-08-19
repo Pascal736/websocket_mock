@@ -66,7 +66,7 @@ defmodule WebSocketMock.Handler do
   end
 
   defp stored_value(registry_name, message) do
-    WebSocketMock.State.replies(registry_name) |> Map.get(message)
+    WebSocketMock.State.replies(registry_name) |> Map.get(message) |> evaludated_reply(message)
   end
 
   defp stored_function(registry_name, message) do
