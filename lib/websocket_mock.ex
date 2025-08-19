@@ -394,7 +394,7 @@ defmodule WebSocketMock do
       # Set up automatic replies
       WebSocketMock.reply_with(mock, {:text, "ping"}, {:text, "pong"})
       # Also works with functions as filters
-      WebSocketMock.reply_with(mock, fn {opcode, msg} -> msg == "ping" end), {:text, "pong"})
+      WebSocketMock.reply_with(mock, fn {opcode, msg} -> msg == "ping" end, {:text, "pong"})
       
       {:ok, client} = WsClient.start(mock.url)
       WsClient.send_message(client, {:text, "ping"})

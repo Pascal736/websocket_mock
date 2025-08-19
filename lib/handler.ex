@@ -72,7 +72,13 @@ defmodule WebSocketMock.Handler do
   defp stored_function(registry_name, message) do
     WebSocketMock.State.filter_replies(registry_name)
     |> Enum.find_value(fn {filter, reply} ->
-      filter.(message) && reply
+      filter.(message) && evaludated_reply(reply, message)
     end)
   end
+
+  defp evaludated_reply({_, reply}, message) when is_function(reply) do
+    reply.(message)
+  end
+
+  defp evaludated_reply(reply, _message), do: reply
 end

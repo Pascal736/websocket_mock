@@ -23,30 +23,33 @@ defmodule WebSocketMock.State do
     end)
   end
 
-  def store_reply(registry_name, filter, {reply_opcode, reply}) when is_function(filter) do
-    reply = stringify(reply)
+  def store_reply(registry_name, matcher, reply) do
+    matcher = normalize_matcher(matcher)
+    reply = normalize_reply(reply)
+    add_reply(registry_name, matcher, reply)
+  end
 
+  defp add_reply(registry_name, matcher, reply) when is_function(matcher) do
     Agent.update({:via, Registry, {registry_name, :state}}, fn state ->
-      %{state | filter_replies: [{filter, {reply_opcode, reply}} | state.filter_replies]}
+      %{state | filter_replies: [{matcher, reply} | state.filter_replies]}
     end)
   end
 
-  def store_reply(registry_name, {msg_opcode, msg}, {reply_opcode, reply}) do
-    msg = stringify(msg)
-    reply = stringify(reply)
-
+  defp add_reply(registry_name, matcher, reply) do
     Agent.update({:via, Registry, {registry_name, :state}}, fn state ->
-      %{state | replies: Map.put(state.replies, {msg_opcode, msg}, {reply_opcode, reply})}
+      %{state | replies: Map.put(state.replies, matcher, reply)}
     end)
   end
 
-  def store_reply(registry_name, filter, reply) when is_function(filter) do
-    store_reply(registry_name, filter, {:text, reply})
-  end
+  defp normalize_matcher(matcher) when is_function(matcher), do: matcher
+  defp normalize_matcher({opcode, matcher}) when is_function(matcher), do: matcher
+  defp normalize_matcher({opcode, matcher}), do: {opcode, stringify(matcher)}
+  defp normalize_matcher(matcher), do: {:text, stringify(matcher)}
 
-  def store_reply(registry_name, msg, reply) do
-    store_reply(registry_name, {:text, msg}, {:text, reply})
-  end
+  defp normalize_reply(reply) when is_function(reply), do: {:text, reply}
+  defp normalize_reply({opcode, reply}) when is_function(reply), do: {opcode, reply}
+  defp normalize_reply({opcode, reply}), do: {opcode, stringify(reply)}
+  defp normalize_reply(reply), do: {:text, stringify(reply)}
 
   defp stringify(val) when is_map(val), do: Jason.encode!(val)
   defp stringify(val) when is_list(val), do: Jason.encode!(val)

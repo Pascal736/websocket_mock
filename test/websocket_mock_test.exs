@@ -218,5 +218,19 @@ defmodule WebsocketMockTest do
       Process.sleep(10)
       assert WsClient.received_messages(client) == []
     end
+
+    test "replys with modified response from transformer function" do
+      {:ok, mock} = WebSocketMock.start()
+      msg = "Hello"
+
+      transformer = fn {opcode, msg} -> {opcode, msg <> " World"} end
+      WebSocketMock.reply_with(mock, fn _ -> true end, transformer)
+      {:ok, client} = WsClient.start(mock.url)
+
+      WsClient.send_message(client, msg)
+
+      Process.sleep(10)
+      assert WsClient.received_messages(client) == [{:text, "Hello World"}]
+    end
   end
 end
