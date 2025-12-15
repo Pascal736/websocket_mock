@@ -1,14 +1,15 @@
 defmodule WebsocketMockTest do
-  alias WebSocketMock.WsClient
+  alias WebSocketMock.MockClient
+  alias WebSocketMock.MockServer
   use ExUnit.Case
 
-  doctest WebSocketMock
+  doctest WebSocketMock.MockServer
 
   describe "websocket mock server" do
     test "creates a unique url each time it starts" do
       mocks =
         for _ <- 1..10 do
-          {:ok, mock} = WebSocketMock.start()
+          {:ok, mock} = MockServer.start()
           mock
         end
 
@@ -18,48 +19,48 @@ defmodule WebsocketMockTest do
       assert length(Enum.uniq(urls)) == 10
       assert length(Enum.uniq(ports)) == 10
 
-      Enum.each(mocks, &WebSocketMock.stop/1)
+      Enum.each(mocks, &MockServer.stop/1)
     end
 
     test "is_connected? returns false when it is not connected" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
 
-      refute WebSocketMock.is_connected?(mock)
+      refute MockServer.is_connected?(mock)
 
-      WebSocketMock.stop(mock)
+      MockServer.stop(mock)
     end
 
     test "is_connected? returns true when it is connected" do
-      {:ok, mock} = WebSocketMock.start()
-      {:ok, _client_pid} = WsClient.start(mock.url)
+      {:ok, mock} = MockServer.start()
+      {:ok, _client_pid} = MockClient.start(mock.url)
 
-      assert WebSocketMock.is_connected?(mock)
+      assert MockServer.is_connected?(mock)
 
-      WebSocketMock.stop(mock)
+      MockServer.stop(mock)
     end
 
     test "number of connections is correct" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
 
-      assert WebSocketMock.num_connections(mock) == 0
+      assert MockServer.num_connections(mock) == 0
 
-      {:ok, _client} = WsClient.start(mock.url)
-      assert WebSocketMock.num_connections(mock) == 1
+      {:ok, _client} = MockClient.start(mock.url)
+      assert MockServer.num_connections(mock) == 1
 
-      {:ok, _client} = WsClient.start(mock.url)
-      assert WebSocketMock.num_connections(mock) == 2
+      {:ok, _client} = MockClient.start(mock.url)
+      assert MockServer.num_connections(mock) == 2
 
-      WebSocketMock.stop(mock)
+      MockServer.stop(mock)
     end
 
     test "list_clients returns correct client information" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
 
-      assert WebSocketMock.list_clients(mock) == []
+      assert MockServer.list_clients(mock) == []
 
-      {:ok, _client} = WsClient.start(mock.url)
+      {:ok, _client} = MockClient.start(mock.url)
 
-      clients = WebSocketMock.list_clients(mock)
+      clients = MockServer.list_clients(mock)
       assert length(clients) == 1
 
       [client] = clients
@@ -67,56 +68,56 @@ defmodule WebsocketMockTest do
       assert is_pid(client.pid)
       assert client.alive? == true
 
-      WebSocketMock.stop(mock)
+      MockServer.stop(mock)
     end
 
     test "multiple mock servers can run simultaneously" do
-      {:ok, mock1} = WebSocketMock.start()
-      {:ok, mock2} = WebSocketMock.start()
+      {:ok, mock1} = MockServer.start()
+      {:ok, mock2} = MockServer.start()
 
-      {:ok, _client1} = WsClient.start(mock1.url)
-      {:ok, _client2} = WsClient.start(mock2.url)
+      {:ok, _client1} = MockClient.start(mock1.url)
+      {:ok, _client2} = MockClient.start(mock2.url)
 
-      assert WebSocketMock.num_connections(mock1) == 1
-      assert WebSocketMock.num_connections(mock2) == 1
+      assert MockServer.num_connections(mock1) == 1
+      assert MockServer.num_connections(mock2) == 1
 
-      clients1 = WebSocketMock.list_clients(mock1)
-      clients2 = WebSocketMock.list_clients(mock2)
+      clients1 = MockServer.list_clients(mock1)
+      clients2 = MockServer.list_clients(mock2)
 
       assert length(clients1) == 1
       assert length(clients2) == 1
       assert clients1 != clients2
 
-      WebSocketMock.stop(mock1)
-      WebSocketMock.stop(mock2)
+      MockServer.stop(mock1)
+      MockServer.stop(mock2)
     end
 
     test "stores received messages" do
-      {:ok, mock} = WebSocketMock.start()
-      {:ok, client} = WsClient.start(mock.url)
+      {:ok, mock} = MockServer.start()
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, {:text, "Hello"})
+      MockClient.send_message(client, {:text, "Hello"})
       # Allow time for the message to be processed
       Process.sleep(10)
 
-      assert WebSocketMock.received_messages(mock) == [{:text, "Hello"}]
+      assert MockServer.received_messages(mock) == [{:text, "Hello"}]
     end
 
     test "stores received messages from specific client" do
-      {:ok, mock} = WebSocketMock.start()
-      {:ok, client1} = WsClient.start(mock.url)
-      {:ok, client2} = WsClient.start(mock.url)
+      {:ok, mock} = MockServer.start()
+      {:ok, client1} = MockClient.start(mock.url)
+      {:ok, client2} = MockClient.start(mock.url)
 
-      WsClient.send_message(client1, {:text, "Hello"})
-      WsClient.send_message(client2, {:text, "World"})
+      MockClient.send_message(client1, {:text, "Hello"})
+      MockClient.send_message(client2, {:text, "World"})
       # Allow time for the message to be processed
       Process.sleep(10)
 
-      clients = WebSocketMock.list_clients(mock)
+      clients = MockServer.list_clients(mock)
 
       messages_by_client =
         Enum.map(clients, fn client ->
-          WebSocketMock.received_messages(mock, client.client_id)
+          MockServer.received_messages(mock, client.client_id)
         end)
 
       assert length(clients) == 2
@@ -125,127 +126,127 @@ defmodule WebsocketMockTest do
     end
 
     test "replys with correct configured message" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = {:text, "hello"}
       response = {:text, "world"}
-      WebSocketMock.reply_with(mock, msg, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, msg, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [response]
+      assert MockClient.received_messages(client) == [response]
     end
 
     test "replys with correct configured json message when map get's send" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = {:text, %{"msg" => "hello"}}
       response = {:text, %{"hello" => "world"}}
-      WebSocketMock.reply_with(mock, msg, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, msg, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [response]
+      assert MockClient.received_messages(client) == [response]
     end
 
     test "replys with correct configured json message when list get's send" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = {:text, [1, 2, 3]}
       response = {:text, [4, 5, 6]}
-      WebSocketMock.reply_with(mock, msg, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, msg, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [response]
+      assert MockClient.received_messages(client) == [response]
     end
 
     test "replys with correct configured json message when nested list get's send" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = {:text, [1, 2, %{"number" => 3}]}
       response = {:text, [4, 5, %{"number" => 6}]}
-      WebSocketMock.reply_with(mock, msg, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, msg, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [response]
+      assert MockClient.received_messages(client) == [response]
     end
 
     test "replys with correct configured json message when shorthand notation is used" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = "Hello"
       response = "World"
-      WebSocketMock.reply_with(mock, msg, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, msg, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [{:text, response}]
+      assert MockClient.received_messages(client) == [{:text, response}]
     end
 
     test "replys with correct message when function is used as filter" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = "Hello"
       response = "World"
 
       filter = fn {_opcode, msg} -> msg == "Hello" end
-      WebSocketMock.reply_with(mock, filter, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, filter, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [{:text, response}]
+      assert MockClient.received_messages(client) == [{:text, response}]
     end
 
     test "does not reply when filter condition is not met" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = "Hello"
       response = "World"
 
       filter = fn {_opcode, msg} -> msg == "Not Hello" end
-      WebSocketMock.reply_with(mock, filter, response)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, filter, response)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == []
+      assert MockClient.received_messages(client) == []
     end
 
     test "replys with modified response from transformer function" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = "Hello"
 
       transformer = fn {opcode, msg} -> {opcode, msg <> " World"} end
-      WebSocketMock.reply_with(mock, msg, transformer)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, msg, transformer)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [{:text, "Hello World"}]
+      assert MockClient.received_messages(client) == [{:text, "Hello World"}]
     end
 
     test "replyes with modified response when using a filter" do
-      {:ok, mock} = WebSocketMock.start()
+      {:ok, mock} = MockServer.start()
       msg = "Hello"
 
       transformer = fn {opcode, msg} -> {opcode, msg <> " World"} end
       filter = fn {_, msg} -> is_binary(msg) end
-      WebSocketMock.reply_with(mock, filter, transformer)
-      {:ok, client} = WsClient.start(mock.url)
+      MockServer.reply_with(mock, filter, transformer)
+      {:ok, client} = MockClient.start(mock.url)
 
-      WsClient.send_message(client, msg)
+      MockClient.send_message(client, msg)
 
       Process.sleep(10)
-      assert WsClient.received_messages(client) == [{:text, "Hello World"}]
+      assert MockClient.received_messages(client) == [{:text, "Hello World"}]
     end
   end
 end
