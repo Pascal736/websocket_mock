@@ -7,23 +7,23 @@ defmodule WebSocketMock.MockServer do
   port and maintains its own isolated registry of connected clients.
 
   ## Example
-
-      # Start a mock server
-      {:ok, mock} = MockServer.start()
-
-      # Connect a WebSocket client to mock.url
-      {:ok, client_pid} = MyWebSocketClient.start(mock.url)
-
-      # Check connection status
-      assert MockServer.is_connected?(mock)
-      assert MockServer.num_connections(mock) == 1
-
-      # Send a message to a specific client
-      [%{client_id: client_id}] = MockServer.list_clients(mock)
-      :ok = MockServer.send_message(mock, client_id, {:text, "Hello!"})
-
-      # Clean up
-      MockServer.stop(mock)
+      iex> alias WebSocketMock.MockServer
+      iex> alias WebSocketMock.MockClient
+      iex>
+      iex> {:ok, mock} = MockServer.start()
+      iex>
+      iex> {:ok, client} = MockClient.start(mock.url)
+      iex>
+      iex> assert MockServer.is_connected?(mock)
+      true
+      iex> assert MockServer.num_connections(mock) == 1
+      true
+      iex>
+      iex> [%{client_id: client_id}] = MockServer.list_clients(mock)
+      iex> :ok = MockServer.send_message(mock, client_id, {:text, "Hello!"})
+      iex>
+      iex> MockServer.stop(mock)
+      :ok
 
   """
 
@@ -71,8 +71,9 @@ defmodule WebSocketMock.MockServer do
 
   ## Examples
 
-      {:ok, mock} = MockServer.start()
-      #=> {:ok, %MockServer{port: 52847, url: "ws://localhost:52847/ws", ...}}
+      iex> alias WebSocketMock.MockServer
+      iex> {:ok, mock} = MockServer.start()
+      iex>  # {:ok, %MockServer{port: 52847, url: "ws://localhost:52847/ws", ...}}
 
   """
   @spec start() :: {:ok, t()} | {:error, term()}
@@ -393,7 +394,7 @@ defmodule WebSocketMock.MockServer do
       # Client will receive {:text, "pong"}
 
       # Mockserver accepts callbacks which run before sending the reply
-      MockServer.reply_with(mock, "ping", fn {opcode, msg) -> {opcode, msg <> " pong"} end)
+      MockServer.reply_with(mock, "ping", fn {opcode, msg} -> {opcode, msg <> " pong"} end)
 
       MockClient.send_message(client, {:text, "ping"})
       # Client will receive {:text, "ping pong"}

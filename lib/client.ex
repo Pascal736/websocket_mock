@@ -51,7 +51,7 @@ defmodule WebSocketMock.MockClient do
     state = %{received: [], sent: []}
     {:ok, pid} = WebSockex.start_link(url, __MODULE__, state)
     # Allow time for the connection to establish
-    Process.sleep(5)
+    Process.sleep(10)
     {:ok, %__MODULE__{pid: pid}}
   end
 
