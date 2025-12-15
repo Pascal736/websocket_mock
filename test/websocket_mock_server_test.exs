@@ -1,4 +1,4 @@
-defmodule WebsocketMockTest do
+defmodule WebsocketMockTest.ServerTest do
   alias WebSocketMock.MockClient
   alias WebSocketMock.MockServer
   use ExUnit.Case

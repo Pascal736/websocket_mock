@@ -1,5 +1,4 @@
 defmodule WebSocketMock do
-  @moduledoc """
-    WebSocketMock provides a 'MockServer' and a 'MockClient' for testing web socket interfaces.
-  """
+  @external_resource "README.md"
+  @moduledoc "README.md" |> File.read!()
 end
