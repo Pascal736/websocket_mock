@@ -1,14 +1,9 @@
-
-
-
-
-
 # WebSocketMock
 
 [![Hex.pm](https://img.shields.io/hexpm/v/websocket_mock.svg)](https://hex.pm/packages/websocket_mock)
 [![Documentation](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/websocket_mock)
 
-Lightweight WebSocket mock server and client for testing.
+Lightweight WebSocket mock server and mock client for testing.
 
 ## Installation
 
@@ -41,9 +36,30 @@ iex> MockClient.send_message(client, {:text, "world"})
 :ok
 iex>
 iex> MockServer.received_messages(server)
-[text: "world"]
+[{:text, "world"}]
 iex> MockClient.received_messages(client)
-[text: "Hello!"]
+[{:text, "Hello!"}]
+
+iex> alias WebSocketMock.MockServer
+iex> alias WebSocketMock.MockClient
+iex>
+iex> {:ok, server} = MockServer.start()
+iex> {:ok, client} = MockClient.start(server.url)
+iex> # Set up automatic replies
+iex>  MockServer.reply_with(server, {:text, "ping"}, {:text, "pong"})
+iex>  # Also works with functions as filters
+iex>  MockServer.reply_with(server, fn {opcode, msg} -> msg == "ping" end, {:text, "pong"})
+iex>   
+iex> MockClient.send_message(client, {:text, "ping"})
+iex> Process.sleep(20)
+iex> MockClient.received_messages(client)
+[{:text, "pong"}]
+iex> # Mockserver accepts callbacks which run before sending the reply
+iex> MockServer.reply_with(server, "ping", fn {opcode, msg} -> {opcode, msg <> " pong"} end)
+iex> MockClient.send_message(client, {:text, "ping"})
+iex> Process.sleep(20)
+iex> MockClient.received_messages(client)
+[{:text, "pong"}, {:text, "ping pong"}]
 ```
 
 ## Usage in Tests
@@ -95,6 +111,11 @@ end
 ## Documentation
 
 Full documentation is available at [https://hexdocs.pm/websocket_mock](https://hexdocs.pm/websocket_mock).
+
+
+## Known Issues
+- Tests are flaky because of the asynchronous nature of the requests. Needs improvement.
+- The mock server currently crashes on start when the randomly selected port is already in use.
 
 
 ## License
