@@ -50,7 +50,7 @@ iex> {:ok, client} = MockClient.start(server.url)
 iex> # Set up automatic replies
 iex>  MockServer.reply_with(server, {:text, "ping"}, {:text, "pong"})
 iex>  # Also works with functions as filters
-iex>  MockServer.reply_with(server, fn {opcode, msg} -> msg == "ping" end, {:text, "pong"})
+iex>  MockServer.reply_with(server, fn {_opcode, msg} -> msg == "ping" end, {:text, "pong"})
 iex>
 iex> MockClient.send_message(client, {:text, "ping"})
 iex> Sync.wait_until(fn -> MockClient.received_messages(client) end)

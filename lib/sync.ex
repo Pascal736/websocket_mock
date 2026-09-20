@@ -26,7 +26,7 @@ defmodule WebSocketMock.Sync do
       iex>
       iex> {:ok, server} = MockServer.start()
       iex> {:ok, client} = MockClient.start(server.url)
-      iex> [%{client_id: client_id}] = MockServer.list_clients(server)
+      iex> [%{client_id: _client_id}] = MockServer.list_clients(server)
       iex>
       iex> MockClient.send_message(client, {:text, "world"})
       iex> Sync.wait_until(fn -> MockServer.received_messages(server) end)

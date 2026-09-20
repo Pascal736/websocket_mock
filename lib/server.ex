@@ -12,7 +12,7 @@ defmodule WebSocketMock.MockServer do
       iex>
       iex> {:ok, mock} = MockServer.start()
       iex>
-      iex> {:ok, client} = MockClient.start(mock.url)
+      iex> {:ok, _client} = MockClient.start(mock.url)
       iex>
       iex> assert MockServer.is_connected?(mock)
       true
@@ -72,7 +72,7 @@ defmodule WebSocketMock.MockServer do
   ## Examples
 
       iex> alias WebSocketMock.MockServer
-      iex> {:ok, mock} = MockServer.start()
+      iex> {:ok, _mock} = MockServer.start()
       iex>  # {:ok, %MockServer{port: 52847, url: "ws://localhost:52847/ws", ...}}
 
   """
@@ -82,9 +82,9 @@ defmodule WebSocketMock.MockServer do
 
     children = [
       {Registry, keys: :unique, name: registry_name},
+      {WebSocketMock.State, registry_name: registry_name},
       {Bandit,
-       plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: 0, startup_log: false},
-      {WebSocketMock.State, registry_name: registry_name}
+       plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: 0, startup_log: false}
     ]
 
     case Supervisor.start_link(children, strategy: :one_for_one) do
