@@ -1,6 +1,7 @@
 defmodule WebsocketMockTest.ServerTest do
   alias WebSocketMock.MockClient
   alias WebSocketMock.MockServer
+  alias WebSocketMock.Sync
   use ExUnit.Case
 
   doctest WebSocketMock.MockServer
@@ -97,10 +98,9 @@ defmodule WebsocketMockTest.ServerTest do
       {:ok, client} = MockClient.start(mock.url)
 
       MockClient.send_message(client, {:text, "Hello"})
-      # Allow time for the message to be processed
-      Process.sleep(10)
 
-      assert MockServer.received_messages(mock) == [{:text, "Hello"}]
+      assert Sync.wait_until(fn -> MockServer.received_messages(mock) end) ==
+               [{:text, "Hello"}]
     end
 
     test "stores received messages from specific client" do
@@ -110,17 +110,17 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client1, {:text, "Hello"})
       MockClient.send_message(client2, {:text, "World"})
-      # Allow time for the message to be processed
-      Process.sleep(10)
 
       clients = MockServer.list_clients(mock)
-
-      messages_by_client =
-        Enum.map(clients, fn client ->
-          MockServer.received_messages(mock, client.client_id)
-        end)
-
       assert length(clients) == 2
+
+      fetch_messages = fn ->
+        Enum.map(clients, &MockServer.received_messages(mock, &1.client_id))
+      end
+
+      Sync.wait_until(fn -> Enum.all?(fetch_messages.(), &(&1 != [])) end)
+      messages_by_client = fetch_messages.()
+
       assert [{:text, "Hello"}] in messages_by_client
       assert [{:text, "World"}] in messages_by_client
     end
@@ -134,8 +134,7 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [response]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) == [response]
     end
 
     test "replys with correct configured json message when map get's send" do
@@ -147,8 +146,7 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [response]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) == [response]
     end
 
     test "replys with correct configured json message when list get's send" do
@@ -160,8 +158,7 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [response]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) == [response]
     end
 
     test "replys with correct configured json message when nested list get's send" do
@@ -173,8 +170,7 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [response]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) == [response]
     end
 
     test "replys with correct configured json message when shorthand notation is used" do
@@ -186,8 +182,8 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, response}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, response}]
     end
 
     test "replys with correct message when function is used as filter" do
@@ -201,8 +197,8 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, response}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, response}]
     end
 
     test "does not reply when filter condition is not met" do
@@ -216,7 +212,6 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
       assert MockClient.received_messages(client) == []
     end
 
@@ -230,8 +225,8 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, "Hello World"}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, "Hello World"}]
     end
 
     test "replyes with modified response when using a filter" do
@@ -245,8 +240,8 @@ defmodule WebsocketMockTest.ServerTest do
 
       MockClient.send_message(client, msg)
 
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, "Hello World"}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, "Hello World"}]
     end
   end
 end

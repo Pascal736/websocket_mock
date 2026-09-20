@@ -78,19 +78,19 @@ defmodule WebSocketMock.MockServer do
   """
   @spec start() :: {:ok, t()} | {:error, term()}
   def start() do
-    port = get_port()
     registry_name = :"ws_mock_registry_#{:erlang.unique_integer()}"
 
-    # TODO: Move bandit in wrapper GenServer to handle used ports retry.
     children = [
       {Registry, keys: :unique, name: registry_name},
       {Bandit,
-       plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: port, startup_log: false},
+       plug: {WebSocketMock.Router, registry_name}, scheme: :http, port: 0, startup_log: false},
       {WebSocketMock.State, registry_name: registry_name}
     ]
 
     case Supervisor.start_link(children, strategy: :one_for_one) do
       {:ok, supervisor_pid} ->
+        port = get_bound_port(supervisor_pid)
+
         mock = %__MODULE__{
           supervisor_pid: supervisor_pid,
           port: port,
@@ -404,8 +404,14 @@ defmodule WebSocketMock.MockServer do
     WebSocketMock.State.store_reply(registry_name, msg, reply)
   end
 
-  defp get_port do
-    :rand.uniform(10_000) + 50_000
+  defp get_bound_port(supervisor_pid) do
+    {_id, bandit_pid, _type, _modules} =
+      supervisor_pid
+      |> Supervisor.which_children()
+      |> Enum.find(fn {id, _pid, _type, _modules} -> match?({Bandit, _ref}, id) end)
+
+    {:ok, {_address, port}} = ThousandIsland.listener_info(bandit_pid)
+    port
   end
 
   defp get_connected_clients(registry_name) do

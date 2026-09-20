@@ -1,6 +1,7 @@
 defmodule WebSocketMockTest.SendMessagesTest do
   alias WebSocketMock.MockClient
   alias WebSocketMock.MockServer
+  alias WebSocketMock.Sync
   use ExUnit.Case
 
   describe "send messages" do
@@ -12,9 +13,8 @@ defmodule WebSocketMockTest.SendMessagesTest do
 
       :ok = MockServer.send_message(mock, client_id, {:text, "Hello, WebSocket!"})
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, "Hello, WebSocket!"}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, "Hello, WebSocket!"}]
 
       MockServer.stop(mock)
     end
@@ -27,9 +27,8 @@ defmodule WebSocketMockTest.SendMessagesTest do
 
       :ok = MockServer.send_message(mock, client_id, "Hello, WebSocket!")
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, "Hello, WebSocket!"}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, "Hello, WebSocket!"}]
 
       MockServer.stop(mock)
     end
@@ -42,9 +41,8 @@ defmodule WebSocketMockTest.SendMessagesTest do
 
       :ok = MockServer.send_message(mock, client_id, %{"hello" => "world"})
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, %{"hello" => "world"}}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, %{"hello" => "world"}}]
 
       MockServer.stop(mock)
     end
@@ -57,9 +55,8 @@ defmodule WebSocketMockTest.SendMessagesTest do
 
       :ok = MockServer.send_message(mock, client_id, {:binary, <<1, 2, 3>>})
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:binary, <<1, 2, 3>>}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:binary, <<1, 2, 3>>}]
 
       MockServer.stop(mock)
     end
@@ -73,10 +70,7 @@ defmodule WebSocketMockTest.SendMessagesTest do
       :ok =
         MockServer.send_message(mock, client_id, {:text, %{"message" => "Hello, WebSocket!"}})
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-
-      assert MockClient.received_messages(client) == [
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) == [
                {:text, %{"message" => "Hello, WebSocket!"}}
              ]
 
@@ -91,9 +85,8 @@ defmodule WebSocketMockTest.SendMessagesTest do
 
       :ok = MockServer.send_message(mock, client_id, {:text, [1, 2, 3]})
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:text, [1, 2, 3]}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:text, [1, 2, 3]}]
 
       MockServer.stop(mock)
     end
@@ -106,9 +99,8 @@ defmodule WebSocketMockTest.SendMessagesTest do
 
       :ok = MockServer.send_message(mock, client_id, {:ping, "ping-data"})
 
-      # Allow time for the message to be processed
-      Process.sleep(10)
-      assert MockClient.received_messages(client) == [{:ping, "ping-data"}]
+      assert Sync.wait_until(fn -> MockClient.received_messages(client) end) ==
+               [{:ping, "ping-data"}]
 
       MockServer.stop(mock)
     end
