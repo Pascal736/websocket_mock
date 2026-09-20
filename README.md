@@ -1,7 +1,7 @@
 # WebSocketMock
 
 [![Hex.pm](https://img.shields.io/hexpm/v/websocket_mock.svg)](https://hex.pm/packages/websocket_mock)
-[![Documentation](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/websocket_mock)
+[![Documentation](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://websocket-mock.hexdocs.pm/)
 
 Lightweight WebSocket mock server and mock client for testing.
 
